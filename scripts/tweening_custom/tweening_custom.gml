@@ -5,31 +5,30 @@
 /// @param {duration} tweening duration
 /// @param {optional_params} optional parameters
 
-function tweening_custom(_mode, _modifier_name, _target_value, _duration, _optional_params = noone) {
+function tweening_custom(_mode, _modifier_name, _target_value, _duration, _optional_params = undefined) {
 	var start_on_create = true;
-	var optional_params = _optional_params;
 	
-	if (optional_params == noone)
-		optional_params =  { start_on_create: false };
-	else if (!variable_struct_exists(optional_params, "start_on_create"))
-		variable_struct_set(optional_params, "start_on_create", false);
-	else
-		optional_params.start_on_create = false;
-	
-	if (_optional_params != noone && variable_struct_exists(_optional_params, "start_on_create")) {
-		_optional_params.start_on_create = false;
+	if (_optional_params != noone
+		&& _optional_params != undefined
+		&& variable_struct_exists(_optional_params, "start_on_create"))
 		start_on_create = _optional_params.start_on_create;
-	}
 	
-	var tween = tweening(_mode, TWEEN_MODIFIER.CUSTOM, _target_value, _duration, optional_params);
-	tween.modifier_name = _modifier_name;
-	
-	tween.set_initial_value();
-	
-	if (start_on_create)
-		tween.start();
+	if (_optional_params == noone || _optional_params == undefined)
+		_optional_params =  { start_on_create: false };
+	else if (!variable_struct_exists(_optional_params, "start_on_create"))
+		variable_struct_set(_optional_params, "start_on_create", false);
 	else
-		tween.pause();
+		_optional_params.start_on_create = false;
 	
-	return tween;
+	with(tweening(_mode, TWEEN_MODIFIER.CUSTOM, _target_value, _duration, _optional_params)) {
+		modifier_name = _modifier_name;
+		set_initial_value();
+	
+		if (start_on_create)
+			start();
+		else
+			pause();
+	
+		return self;
+	}
 }

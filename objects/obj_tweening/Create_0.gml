@@ -1,22 +1,7 @@
-enum STEP_EVENT { BEGIN_STEP, STEP, END_STEP }
-
-enum TWEEN_MODE 
-{
-	PERSIST, BACK_AND_PERSIST,
-	ONE_SHOT, BACK_AND_SHOOT,
-	LOOP, YOYO, RESTART
-}
-
-enum TWEEN_MODIFIER
-{ 
-	HORIZONTAL_POSITION, VERTICAL_POSITION, DIAGONAL_POSITION,
-	WIDTH, HEIGHT, SIZE,
-	OPACITY, COLOR, ANGLE, CUSTOM,
-}
-
-caller = noone;
-on_finish = noone;
-step_to_update = STEP_EVENT.STEP;
+instance = noone;
+on_finish = undefined;
+step_to_update = TWEEN_UPDATE_EVENT.STEP;
+time_source = TWEEN_TIME_SOURCE.MILLISECONDS;
 mode = TWEEN_MODE.PERSIST;
 modifier = TWEEN_MODIFIER.CUSTOM;
 initial_value = 0;
@@ -43,43 +28,43 @@ function set_initial_value() {
 	switch (modifier)
     {
         case TWEEN_MODIFIER.HORIZONTAL_POSITION:
-			initial_value = caller.x;
+			initial_value = instance.x;
             break;
 
         case TWEEN_MODIFIER.VERTICAL_POSITION:
-			initial_value = caller.y;
+			initial_value = instance.y;
             break;
 			
 		case TWEEN_MODIFIER.DIAGONAL_POSITION:
-			initial_value = { x: caller.x, y: caller.y };
+			initial_value = { x: instance.x, y: instance.y };
 			if (typeof(target_value) != "struct")
 				target_value = { x: target_value, y: target_value };
             break;
 
         case TWEEN_MODIFIER.WIDTH:
-			initial_value = caller.image_xscale;
+			initial_value = instance.image_xscale;
             break;
 		
 		case TWEEN_MODIFIER.HEIGHT:
-			initial_value = caller.image_yscale;
+			initial_value = instance.image_yscale;
             break;
 		
 		case TWEEN_MODIFIER.SIZE:
-			initial_value = { width: caller.image_xscale, height: caller.image_yscale };
+			initial_value = { width: instance.image_xscale, height: instance.image_yscale };
 			if (typeof(target_value) != "struct")
 				target_value = { width: target_value, height: target_value };
             break;
 
         case TWEEN_MODIFIER.OPACITY:
-			initial_value = caller.image_alpha;
+			initial_value = instance.image_alpha;
             break;
 		
 		case TWEEN_MODIFIER.COLOR:
 			initial_value = {
-				r: color_get_red(caller.image_blend),
-				g: color_get_green(caller.image_blend),
-				b: color_get_blue(caller.image_blend),
-				a: caller.image_alpha
+				r: color_get_red(instance.image_blend),
+				g: color_get_green(instance.image_blend),
+				b: color_get_blue(instance.image_blend),
+				a: instance.image_alpha
 			};
 			
 			if (typeof(target_value) != "struct")
@@ -87,10 +72,10 @@ function set_initial_value() {
 					r: color_get_red(target_value),
 					g: color_get_green(target_value),
 					b: color_get_red(target_value),
-					a: caller.image_alpha
+					a: instance.image_alpha
 				};
 			else if (!variable_struct_exists(target_value, "a"))
-				target_value.a = caller.image_alpha;
+				target_value.a = instance.image_alpha;
 			
 			target_value.r = clamp(target_value.r, 0, 255);
 			target_value.g = clamp(target_value.g, 0, 255);
@@ -99,11 +84,11 @@ function set_initial_value() {
             break;
 		
 		case TWEEN_MODIFIER.ANGLE:
-			initial_value = caller.image_angle;
+			initial_value = instance.image_angle;
             break;
 			
 		case TWEEN_MODIFIER.CUSTOM:
-			initial_value = variable_instance_get(caller.id, modifier_name);
+			initial_value = variable_instance_get(instance.id, modifier_name);
             break;
     }
 }
@@ -113,33 +98,33 @@ function modify()
     switch (modifier)
     {
         case TWEEN_MODIFIER.HORIZONTAL_POSITION:
-            caller.x = lerp(initial_value, target_value, current_value);
+            instance.x = lerp(initial_value, target_value, current_value);
             break;
 
         case TWEEN_MODIFIER.VERTICAL_POSITION:
-            caller.y = lerp(initial_value, target_value, current_value);
+            instance.y = lerp(initial_value, target_value, current_value);
             break;
 			
 		case TWEEN_MODIFIER.DIAGONAL_POSITION:
-			caller.x = lerp(initial_value.x, target_value.x, current_value);
-            caller.y = lerp(initial_value.y, target_value.y, current_value);
+			instance.x = lerp(initial_value.x, target_value.x, current_value);
+            instance.y = lerp(initial_value.y, target_value.y, current_value);
             break;
 
         case TWEEN_MODIFIER.WIDTH:
-            caller.image_xscale = lerp(initial_value, target_value, current_value);
+            instance.image_xscale = lerp(initial_value, target_value, current_value);
             break;
 		
 		case TWEEN_MODIFIER.HEIGHT:
-            caller.image_yscale = lerp(initial_value, target_value, current_value);
+            instance.image_yscale = lerp(initial_value, target_value, current_value);
             break;
 		
 		case TWEEN_MODIFIER.SIZE:
-            caller.image_xscale = lerp(initial_value.width, target_value.width, current_value);
-			caller.image_yscale = lerp(initial_value.height, target_value.height, current_value);
+            instance.image_xscale = lerp(initial_value.width, target_value.width, current_value);
+			instance.image_yscale = lerp(initial_value.height, target_value.height, current_value);
             break;
 
         case TWEEN_MODIFIER.OPACITY:
-			caller.image_alpha = lerp(initial_value, target_value, current_value);
+			instance.image_alpha = lerp(initial_value, target_value, current_value);
             break;
 			
 		case TWEEN_MODIFIER.COLOR:
@@ -149,32 +134,44 @@ function modify()
 			r = clamp(r, 0, 255);
 			g = clamp(g, 0, 255);
 			b = clamp(b, 0, 255);
-			caller.image_blend = make_color_rgb(r, g, b);
-			caller.image_alpha = lerp(initial_value.a, target_value.a, current_value);
+			instance.image_blend = make_color_rgb(r, g, b);
+			instance.image_alpha = lerp(initial_value.a, target_value.a, current_value);
             break;
 		
 		case TWEEN_MODIFIER.ANGLE:
-            caller.image_angle = lerp(initial_value, target_value, current_value);
+            instance.image_angle = lerp(initial_value, target_value, current_value);
             break;
 		
 		case TWEEN_MODIFIER.CUSTOM:
 			variable_instance_set(
-				caller.id, modifier_name, lerp(initial_value, target_value, current_value));
+				instance.id, modifier_name, lerp(initial_value, target_value, current_value));
             break;
     }
 }
 
 function update()
 {
-	if (!instance_exists(caller)) {
+	if (!instance_exists(instance)) {
 		stop();
 		return;
 	}
 	
 	if (is_paused)
 		return;
+	
+	switch(time_source) {
+		case TWEEN_TIME_SOURCE.MILLISECONDS:
+			elapsed_time += delta_time / 1000;
+			break;
 		
-	elapsed_time += delta_time / 1000;
+		case TWEEN_TIME_SOURCE.SECONDS:
+			elapsed_time += delta_time / 1000000;
+			break;
+		
+		case TWEEN_TIME_SOURCE.FRAMES:
+			elapsed_time++;
+			break;
+	}
 
 	if (elapsed_time >= duration)
 	{
@@ -225,14 +222,15 @@ function finish()
 	finished_count++;
 	
 	var _finish = function() {
-		if (on_finish != noone)
-			method(caller.id, on_finish)(self);
+		if (on_finish != noone && on_finish != undefined)
+			method(instance.id, on_finish)(self);
 	}
 
     switch (mode)
     {
         case TWEEN_MODE.PERSIST:
 			is_active = false;
+			_finish();
             instance_destroy();
             break;
 			
@@ -249,7 +247,8 @@ function finish()
 
         case TWEEN_MODE.ONE_SHOT:
 			is_active = false;
-            instance_destroy(caller);
+			_finish();
+            instance_destroy(instance);
             instance_destroy();
             break;
 			
@@ -260,7 +259,7 @@ function finish()
 				start();
 			} else {
 				_finish();
-				instance_destroy(caller);
+				instance_destroy(instance);
 				stop();
 			}
             break;

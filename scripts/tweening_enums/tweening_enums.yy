@@ -1,7 +1,7 @@
 {
   "resourceType": "GMScript",
   "resourceVersion": "1.0",
-  "name": "tweening_custom",
+  "name": "tweening_enums",
   "isDnD": false,
   "isCompatibility": false,
   "parent": {
